@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <p class="no_mgn" id="card_name"></p>
+
+    <hr />
+
+    <a
+      class="link"
+      id="site_link"
+      href=""
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <p class="link_text" id="site_link_text"></p>
+    </a>
+
+    <a
+      class="link"
+      id="google_search_link"
+      href=""
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <p class="link_text google_search" id="google_link_text">
+        カード名をGoogle検索
+      </p>
+    </a>
+
+    <a
+      class="link"
+      id="google_search_link_yugioh"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <p class="link_text google_search" id="google_link_yugioh_text">
+        「遊戯王」を含めてGoogle検索
+      </p>
+    </a>
+
+    <hr />
+    <label id="display_nav_text">
+      ナビゲーションアイコンを表示
+      <input type="checkbox" id="display_nav_icon">
+    </label>
+
+    <p id="to_about_text">
+      <a
+        id="to_about_link"
+        href="https://github.com/uyayimon/YuGiOh-CardDB-Wiki/wiki"
+        target="_blank"
+        rel="noopener noreferrer"
+        >About this Extension
+      </a>
+    </p>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
