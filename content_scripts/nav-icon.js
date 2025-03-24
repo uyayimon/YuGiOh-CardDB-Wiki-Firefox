@@ -24,7 +24,15 @@ const getTooltipText = () => {
   }
 }
 
-const displayNavIvon = () => {
+const removeNavIcon = () => {
+  const navIcon = document.getElementById('icon_whole');
+  document.body.removeChild(navIcon);
+
+  chrome.storage.sync.set({ icon_position_y: '200px', icon_position_x: '90%' });
+}
+
+
+const displayNavIcon = () => {
   // 要素の生成
   const newElement = document.createElement('div');
   newElement.setAttribute('id', 'icon_whole');
@@ -65,7 +73,6 @@ const displayNavIvon = () => {
     navIcon.style.top = positionTop;
     navIcon.style.left = positionLeft;
   });
-
 
   navIcon.ondragstart = (event) => {
     return false;
@@ -117,15 +124,10 @@ const displayNavIvon = () => {
   document.getElementById('close_btn').addEventListener('click', (event) => {
     event.stopPropagation();
     removeNavIcon();
+    chrome.storage.sync.set({ setting_nav_icon_display: false });
   });
 
 }
-
-const removeNavIcon = () => {
-  const navIcon = document.getElementById('icon_whole');
-  document.body.removeChild(navIcon);
-}
-
 
 chrome.storage.sync.get({
   setting_nav_icon_display: true
@@ -133,7 +135,7 @@ chrome.storage.sync.get({
 }, (items) => {
   if (!items.setting_nav_icon_display) return;
 
-  else displayNavIvon();
+  else displayNavIcon();
 });
 
 
@@ -143,10 +145,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse(!!document.getElementById("icon_whole"));
 
   // from popup.js
-  if (request.message == 'display_icon') {
+  else if (request.message == 'display_icon') {
     if (request.checked) {
       if (!document.getElementById("icon_whole"))
-        displayNavIvon();
+        displayNavIcon();
     }
     else
       removeNavIcon();

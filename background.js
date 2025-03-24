@@ -28,27 +28,78 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 
-const getCardName = (currentPageName, currentPageUrl) => {
-  // ローマ数字の変換リスト
-  const romanNumeralList = {
-    "Ⅹ": "Ｘ",
-    "Ⅸ": "ＩⅩ",
-    "Ⅷ": "ＶＩＩＩ",
-    "Ⅶ": "ＶＩＩ",
-    "Ⅵ": "ＶＩ",
-    "Ⅳ": "ＩＶ",
-    "Ⅴ": "Ｖ",
-    "Ⅲ": "ＩＩＩ",
-    "Ⅱ": "ＩＩ",
-    "Ⅰ": "Ｉ"
-  }
+// コンテキストメニューを作成
+chrome.runtime.onInstalled.addListener(() => {
+  const contextParent1 = chrome.menus.create({
+    id: 'context_key_page_navigation',
+    title: '遊戯王DB⇔Wiki',
+    documentUrlPatterns: [
+      "https://www.db.yugioh-card.com/*/*cid*",
+      "https://yugioh-wiki.net/*%A1%D4*",
+      "https://rush.yugioh-wiki.net/*%E3%80%8A*",
+      "https://yugioh-wiki.net/*%E3%80%8A*"
+    ],
+  });
 
+  chrome.menus.create({
+    parentId: contextParent1,
+    id: 'context_wiki_page_navigation',
+    title: '遊戯王カードWikiで表示',
+    documentUrlPatterns: ["https://www.db.yugioh-card.com/*/*cid*"],
+  });
+
+  chrome.menus.create({
+    parentId: contextParent1,
+    id: 'context_db_page_navigation',
+    title: '遊戯王公式データベースで検索',
+    documentUrlPatterns: [
+      "https://yugioh-wiki.net/*%A1%D4*",
+      "https://rush.yugioh-wiki.net/*%E3%80%8A*",
+      "https://yugioh-wiki.net/*%E3%80%8A*"
+    ],
+  });
+
+  chrome.menus.create({
+    parentId: contextParent1,
+    id: "separator1",
+    type: "separator",
+  });
+
+  chrome.menus.create({
+    parentId: contextParent1,
+    id: 'context_google_search',
+    title: 'カード名をGoogle検索',
+  });
+
+  const contextParent2 = chrome.menus.create({
+    id: 'context_key_page_navigation_select',
+    title: '遊戯王DB⇔Wiki',
+    contexts: ["selection"]
+  });
+
+  chrome.menus.create({
+    parentId: contextParent2,
+    id: 'context_select_db_search',
+    title: '選択テキストを遊戯王OCGデータベースで検索',
+    contexts: ["selection"]
+  });
+
+  chrome.menus.create({
+    parentId: contextParent2,
+    id: 'context_select_rush_db_search',
+    title: '選択テキストをラッシュデュエルデータベースで検索',
+    contexts: ["selection"]
+  });
+});
+
+
+const getCardName = (currentPageName, currentPageUrl) => {
   let cardName;
   let replacedCardName;
   let navPageUrl;
 
   const replacePDC = (writing1, writing2) => {
-    const foundCardName = platformDependentCharCardList.find((pdcKey) => pdcKey[writing1] == cardName);
+    const foundCardName = interconversionCardList.find((pdcKey) => pdcKey[writing1] == cardName);
 
     if (foundCardName != undefined)
       replacedCardName = foundCardName[writing2];
@@ -63,12 +114,17 @@ const getCardName = (currentPageName, currentPageUrl) => {
     // 機種依存文字を含まない名前に変換
     replacePDC('official_name', 'wiki_name');
 
-    // ローマ数字→アルファベット
+    // ローマ数字をアルファベットで代用
     for (const [key, value] of Object.entries(romanNumeralList)) {
       replacedCardName = replacedCardName.split(key).join(value);
     }
 
-    // 半角→全角
+    // アクセントがついた文字を代用
+    for (const [key, value] of Object.entries(accentedCharacterList)) {
+      replacedCardName = replacedCardName.split(key).join(value);
+    }
+
+    // 半角を全角に変換
     replacedCardName = replacedCardName.replace(/-/g, '－');
     replacedCardName = replacedCardName.replace(/[A-Za-z0-9]/g, (s) => {
       return String.fromCharCode(s.charCodeAt(0) + 0xFEE0);
@@ -98,9 +154,9 @@ const getCardName = (currentPageName, currentPageUrl) => {
     // 機種依存文字を含む名前に変換
     replacePDC('wiki_name', 'official_name');
 
-    // アルファベット→ローマ数字
-    for (const [key, value] of Object.entries(romanNumeralList)) {
-      replacedCardName = replacedCardName.split(value).join(key);
+    // DB検索において認識されない文字を半角スペースに変換
+    for (const [key, value] of Object.entries(interconversionCharacterList)) {
+      replacedCardName = replacedCardName.split(key).join(value);
     }
 
     if (urlIncludesParts(currentPageUrl, 'rush'))
@@ -117,7 +173,7 @@ const getCardName = (currentPageName, currentPageUrl) => {
 }
 
 
-const navigatePageDW = (adress) => {
+const navigatePage = (adress) => {
   chrome.tabs.query(queryInfo, (tab) => {
     chrome.tabs.create({
       url: adress,
@@ -126,15 +182,14 @@ const navigatePageDW = (adress) => {
   });
 }
 
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // from nav-icon.js
   if (request.message == 'page_navigation') {
     const result = getCardName(sender.tab.title, sender.tab.url);
-    navigatePageDW(result.link);
+    navigatePage(result.link);
   }
   // from popup.js
-  if (request.message == 'get_name&url') {
+  if (request.message == 'get_name_url') {
     chrome.tabs.query(queryInfo, (tab) => {
       const result = getCardName(tab[0].title, tab[0].url)
       sendResponse(result);
@@ -143,7 +198,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-
 chrome.commands.onCommand.addListener((command) => {
   chrome.tabs.query(queryInfo, (tab) => {
     if (!discernUrl(tab[0].url)) return;
@@ -151,10 +205,41 @@ chrome.commands.onCommand.addListener((command) => {
       const result = getCardName(tab[0].title, tab[0].url)
 
       if (command == 'key_page_navigation')
-        navigatePageDW(result.link);
+        navigatePage(result.link);
 
       if (command == 'key_google_search')
-        navigatePageDW(`https://www.google.com/search?q=${result.name1}`);
+        navigatePage(`https://www.google.com/search?q=${result.name1}`);
     }
   });
+});
+chrome.menus.onClicked.addListener((info, tab) => {
+  chrome.tabs.query(queryInfo, (tab) => {
+    const result = getCardName(tab[0].title, tab[0].url)
+    let navPageUrl;
+    let searchWord;
+
+    switch (info.menuItemId) {
+      case "context_wiki_page_navigation":
+      case "context_db_page_navigation":
+        navPageUrl = result.link;
+        break;
+      case "context_google_search":
+        navPageUrl = `https://www.google.com/search?q=${result.name1}`;
+        break;
+      case "context_select_db_search":
+        searchWord = info.selectionText;
+        navPageUrl = `https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=1&sess=1&rp=100&page=1&keyword=${encodeURI(searchWord)}`;
+        break;
+      case "context_select_rush_db_search":
+        searchWord = info.selectionText;
+        navPageUrl = `https://www.db.yugioh-card.com/rushdb/card_search.action?ope=1&sess=1&rp=100&keyword=${searchWord}`;
+        break;
+      default:
+        return;
+    }
+
+    navigatePage(navPageUrl);
+  }
+
+  )
 });
