@@ -35,7 +35,7 @@ chrome.runtime.onInstalled.addListener(() => {
     title: '遊戯王DB⇔Wiki',
     documentUrlPatterns: [
       "https://www.db.yugioh-card.com/*/*cid*",
-      "https://yugioh-wiki.net/*%A1%D4*",
+      "https://yugioh-wiki.net/*%A1%D4%*",
       "https://rush.yugioh-wiki.net/*%E3%80%8A*",
       "https://yugioh-wiki.net/*%E3%80%8A*"
     ],
@@ -51,9 +51,9 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.menus.create({
     parentId: contextParent1,
     id: 'context_db_page_navigation',
-    title: '遊戯王公式データベースで検索',
+    title: '遊戯王ニューロンデータベースで検索',
     documentUrlPatterns: [
-      "https://yugioh-wiki.net/*%A1%D4*",
+      "https://yugioh-wiki.net/*%A1%D4%*",
       "https://rush.yugioh-wiki.net/*%E3%80%8A*",
       "https://yugioh-wiki.net/*%E3%80%8A*"
     ],
@@ -182,6 +182,7 @@ const navigatePage = (adress) => {
   });
 }
 
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // from nav-icon.js
   if (request.message == 'page_navigation') {
@@ -197,6 +198,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   return true;
 });
+
 
 chrome.commands.onCommand.addListener((command) => {
   chrome.tabs.query(queryInfo, (tab) => {
